@@ -126,6 +126,36 @@ jobs:
           echo "ref=${image}@${digest}" >> "$GITHUB_OUTPUT"
           echo "Attesting ${image}@${digest}"
 
+      - name: Generate the image SBOM
+        id: sbom
+        # Pinned to a main commit rather than a tag: sbom/image is merged but
+        # no release carries it yet (v1.2.6 predates it). Move to a tag once
+        # one ships.
+        uses: carabiner-dev/actions/sbom/image@2a064f619161017ea6def553cec9393ce9b3cac3
+        with:
+          # An SBOM of the built image, not of the source tree. unpack pulls
+          # the digest from the registry and walks the layers.
+          images: ${{ steps.image.outputs.ref }}
+          format: spdx3
+          output-path: sboms
+
+      - name: Attach the SBOM to the image
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.ref }}
+          SBOM_FILES: ${{ steps.sbom.outputs.files }}
+        run: |
+          set -euo pipefail
+          # One image in, so one SBOM out; take the first non-empty line.
+          sbom=$(printf '%s\n' "$SBOM_FILES" | sed '/^[[:space:]]*$/d' | head -n1)
+          [ -s "$sbom" ] || { echo "::error::No SBOM produced"; exit 1; }
+          # https://spdx.dev/Document/v3 is the predicate type unpack itself
+          # stamps on SPDX 3 documents; SPDX 3 is a different model from 2.x,
+          # so it does not reuse the https://spdx.dev/Document type.
+          cosign attest --yes \
+            --predicate "$sbom" \
+            --type "https://spdx.dev/Document/v3" \
+            "$IMAGE_REF"
+
       - name: Attach the provenance attestation to the image
         env:
           IMAGE_REF: ${{ steps.image.outputs.ref }}
