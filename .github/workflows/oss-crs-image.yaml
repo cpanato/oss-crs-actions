@@ -36,7 +36,7 @@ jobs:
       packages: write
       id-token: write # To sign the image with Sigstore
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -106,7 +106,7 @@ jobs:
         run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
 
       - name: Generate provenance
-        uses: carabiner-dev/actions/slsa/generate@36a39ef667efe7112df8b1a534a4e37f35fad6fd # v1.2.6
+        uses: carabiner-dev/actions/slsa/generate@d6d91c5c88723021a8798392cb9780c89ff6fdad # v1.2.7
         with:
           sign: "false"
           output: provenance.json
@@ -131,7 +131,7 @@ jobs:
         # Pinned to a main commit rather than a tag: sbom/image is merged but
         # no release carries it yet (v1.2.6 predates it). Move to a tag once
         # one ships.
-        uses: carabiner-dev/actions/sbom/image@2a064f619161017ea6def553cec9393ce9b3cac3
+        uses: carabiner-dev/actions/sbom/image@d6d91c5c88723021a8798392cb9780c89ff6fdad # v1.2.7
         with:
           # An SBOM of the built image, not of the source tree. unpack pulls
           # the digest from the registry and walks the layers.
